@@ -1,7 +1,7 @@
 # Proyecto de Búsqueda y Verificación de DVWA
 
 ## Descripción
-Este proyecto utiliza la API de Censys para buscar potenciales instancias de Damn Vulnerable Web Application (DVWA) en Internet. Luego, verifica cada instancia encontrada e intenta realizar un login automático utilizando credenciales por defecto.
+Este proyecto utiliza la API de Censys y Shodan para buscar potenciales instancias de Damn Vulnerable Web Application (DVWA) en Internet. Luego, verifica cada instancia encontrada e intenta realizar un login automático utilizando credenciales por defecto.
 
 ### Advertencia
 Este script está diseñado únicamente con fines educativos y de investigación. El uso de este script para acceder a sistemas sin autorización expresa puede ser ilegal. Asegúrate de tener permiso antes de escanear o intentar acceder a cualquier sistema que no sea de tu propiedad.
@@ -10,6 +10,7 @@ Este script está diseñado únicamente con fines educativos y de investigación
 
 - Python 3.6+
 - Cuenta de Censys (gratuita o de pago)
+- Cuenta de Shodan (gratuita o de pago)
 - Bibliotecas de Python: `censys`, `requests`, `python-dotenv`,`shodan`
 
 ## Instalación
