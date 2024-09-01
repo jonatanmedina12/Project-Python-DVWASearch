@@ -41,4 +41,4 @@ Ejecuta el script principal:
 python main.py
 ```
 ## Licencia
-Este proyecto está licenciado bajo la Licencia MIT - vea el archivo LICENSE para más detalles.
+Este proyecto está licenciado bajo la Mozilla Public License 2.0 - vea el archivo LICENSE para más detalles.
