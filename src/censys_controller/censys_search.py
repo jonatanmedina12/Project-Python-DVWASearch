@@ -15,7 +15,7 @@ class CensysController:
                 per_page=per_page,
                 fields=fields
             )
-            return results
+            return list(results)  # Convertimos el generador a una lista
         except CensysException as e:
             print(f"Error en la API de Censys: {e}")
             return None
