@@ -1,13 +1,15 @@
 import time
+from concurrent.futures import as_completed
+from concurrent.futures.thread import ThreadPoolExecutor
+
 from censys.common.exceptions import CensysException
 from dotenv import load_dotenv
 import os
 from src.censys_controller.censys_search import CensysController
-from src.censys_controller.login_automation_censys import verify_dvwa, attempt_login
+from src.censys_controller.login_automation_censys import verify_dvwa, attempt_login,process_result
 from src.shodan_controller.shodan_search import ShodanSearch
 
 load_dotenv()
-
 
 def shodan_exec():
     SHODAN_API_KEY = os.getenv("SHODAN_API_KEY")
@@ -41,10 +43,12 @@ def shodan_exec():
         print(f"Localización: {match.get('location', {}).get('country_name', 'N/A')}, "
               f"{match.get('location', {}).get('city', 'N/A')}")
 
+
+
 def censys_exec():
+    t = time.perf_counter()
     API_ID = os.getenv("CENSYS_API_ID")
     API_SECRET = os.getenv("CENSYS_API_SECRET")
-
 
     if not API_ID or not API_SECRET:
         print("Error: No se encontraron las credenciales de Censys en las variables de entorno.")
@@ -60,37 +64,29 @@ def censys_exec():
         if quota['allowance'] - quota['used'] <= 0:
             print("Has alcanzado tu límite de búsquedas. Por favor, espera hasta el próximo ciclo.")
             return
-        # Consulta para buscar posibles instancias de DVWA
+
         query = '(services.http.response.html_title: "Damn Vulnerable Web Application") OR (services.http.response.body: "DVWA")'
-        results = h.search(query,page=1, per_page=2)
-        total_results = 0
-        for page in results:
-            print(page)
-            for result in page:
-                ip = result.get('ip', 'N/A')
-                print(f"\nComprobando IP: {ip}")
+        results = h.search(query, page=1, per_page=10)
 
-                services = result.get('services', [])
-                for service in services:
-                    if service.get('service_name') in ['HTTP', 'HTTPS']:
-                        port = service.get('port', 80)
-                        protocol = 'https' if service.get('service_name') == 'HTTPS' else 'http'
-                        url = f"{protocol}://{ip}:{port}/login.php"
+        if not results:
+            print("No se encontraron resultados.")
+            return
 
-                        print(f"Verificando DVWA en {url}")
-                        if verify_dvwa(url):
-                            print(f"[+] DVWA encontrado en {url}")
-                            if attempt_login(url):
-                                print(f"[+] Login exitoso en {url}")
-                            else:
-                                print(f"[-] Login fallido en {url}")
-                        else:
-                            print(f"[-] No se encontró DVWA en {url}")
+        # Imprimir la estructura del primer resultado para depuración
+        with ThreadPoolExecutor() as executor:
+            futures = [executor.submit(process_result, result) for result in results]
+            for future in as_completed(futures):
+                try:
+                    found_dvwa = future.result()
+                    if found_dvwa:
+                        print("Se encontró DVWA en este resultado.")
+                    else:
+                        print("No se encontró DVWA en este resultado.")
+                except Exception as e:
+                    print(f"Ocurrió un error al procesar un resultado: {e}")
 
-                        time.sleep(2)
-        print("---")
-
-        print(f"\nTotal de posibles instancias DVWA encontradas: {total_results}")
+        print("--------------------------------------------")
+        print(f"Tiempo de procesamiento: {time.perf_counter() - t:.2f}s")
 
     except CensysException as e:
         print(f"Error en la API de Censys: {e}")
